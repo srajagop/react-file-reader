@@ -1,92 +1,101 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from 'react'
+import PropTypes from 'prop-types'
 
-export default class ReactFileReader extends React.Component {
-  fileInput = null;
+export default class ReactFileReader extends Component {
+    fileInput = null;
 
-  setFileInput = element => {
-    this.fileInput = element;
-  }
-
-  clickInput = () => {
-    const element = this.fileInput;
-    element.value = '';
-    element.click();
-  }
-
-  handleFiles = (event) => {
-    if(this.props.base64) {
-      this.convertFilesToBase64(event.target.files);
-    } else {
-      this.props.handleFiles(event.target.files);
+    setFileInput = (element) => {
+      this.fileInput = element
     }
-  }
 
-  convertFilesToBase64 = (files) => {
-    let ef = files;
+    clickInput = () => {
+      const element = this.fileInput
+      element.value = ''
+      element.click()
+    }
 
-    if (this.props.multipleFiles) {
-      let files = { base64: [], fileList: ef };
+    handleFiles = (event) => {
+      const { base64, handleFiles } = this.props
+      if (base64) {
+        this.convertFilesToBase64(event.target.files)
+      } else {
+        handleFiles(event.target.files)
+      }
+    }
 
-      for (var i = 0, len = ef.length; i < len; i++) {
-        let reader = new FileReader();
-        let f = ef[i];
+    convertFilesToBase64 = (fileList) => {
+      const ef = fileList
+      const { multipleFiles, handleFiles } = this.props
 
-        reader.onloadend = e => {
-          files.base64.push(reader.result);
+      if (multipleFiles) {
+        const files = { base64: [], fileList: ef }
 
-          if (files.base64.length === ef.length) {
-            this.props.handleFiles(files);
+        ef.forEach((item) => {
+          const reader = new FileReader()
+          const f = item
+
+          reader.onloadend = (e) => {
+            files.base64.push(reader.result)
+
+            if (files.base64.length === ef.length) {
+              handleFiles(files)
+            }
           }
+
+          reader.readAsDataURL(f)
+        })
+      } else {
+        const files = { base64: '', fileList: ef }
+        const f = ef[0]
+        const reader = new FileReader()
+
+        reader.onloadend = (e) => {
+          files.base64 = reader.result
+          handleFiles(files)
         }
 
-        reader.readAsDataURL(f);
+        reader.readAsDataURL(f)
       }
-    } else {
-      let files = { base64: '', fileList: ef };
-      let f = ef[0];
-      let reader = new FileReader();
+    }
 
-      reader.onloadend = e => {
-        files.base64 = reader.result;
-        this.props.handleFiles(files);
+    render () {
+      const hideInput = {
+        width: '0px',
+        opacity: '0',
+        position: 'fixed'
+      }
+      const {
+        elementId,
+        fileTypes,
+        multipleFiles,
+        disabled,
+        children
+      } = this.props
+
+      const optionalAttributes = {}
+      if (elementId) {
+        optionalAttributes.id = elementId
       }
 
-      reader.readAsDataURL(f);
-    }
-  }
-
-  render() {
-    var hideInput = {
-      width: '0px',
-      opacity: '0',
-      position: 'fixed',
-    }
-
-    const optionalAttributes = {};
-    if (this.props.elementId) {
-      optionalAttributes.id = this.props.elementId;
-    }
-
-    return(
-      <div className='react-file-reader'>
-        <input type='file'
-          onChange={this.handleFiles}
-          accept={Array.isArray(this.props.fileTypes) ? this.props.fileTypes.join(',') : this.props.fileTypes}
-          className='react-file-reader-input'
-          ref={this.setFileInput}
-          multiple={this.props.multipleFiles}
-          style={hideInput}
-          disabled={this.props.disabled}
-          {...optionalAttributes}
-        />
-
-        <div className='react-file-reader-button' onClick={this.clickInput}>
-          {this.props.children}
+      return (
+        <div className="react-file-reader">
+          <input
+            type="file"
+            onChange={this.handleFiles}
+            accept={Array.isArray(fileTypes) ? fileTypes.join(',') : fileTypes}
+            className="react-file-reader-input"
+            ref={this.setFileInput}
+            multiple={multipleFiles}
+            style={hideInput}
+            disabled={disabled}
+            {...optionalAttributes}
+          />
+          <div className="react-file-reader-button" role="presentation" onClick={this.clickInput}>
+            {children}
+          </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 }
 
 ReactFileReader.defaultProps = {
@@ -94,17 +103,18 @@ ReactFileReader.defaultProps = {
   multipleFiles: false,
   base64: false,
   disabled: false,
-};
+  elementId: ''
+}
 
 ReactFileReader.propTypes = {
   multipleFiles: PropTypes.bool,
   handleFiles: PropTypes.func.isRequired,
   fileTypes: PropTypes.oneOfType([
     PropTypes.string,
-    PropTypes.array,
+    PropTypes.array
   ]),
   base64: PropTypes.bool,
   children: PropTypes.element.isRequired,
   disabled: PropTypes.bool,
-  elementId: PropTypes.string,
-};
+  elementId: PropTypes.string
+}
